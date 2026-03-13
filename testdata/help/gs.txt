@@ -40,7 +40,6 @@ Stack
   upstack (us) delete (d)       Delete all branches above the current branch
   downstack (ds) track (tr)     Track all untracked branches below a branch
   downstack (ds) submit (s)     Submit a branch and those below it
-  downstack (ds) merge (m)      Merge a branch and those below it
   downstack (ds) edit (e)       Edit the order of branches below a branch
   downstack (ds) restack (r)    Restack a branch and its downstack
 
@@ -70,6 +69,9 @@ Commit
 Rebase
   rebase (rb) continue (c)    Continue an interrupted operation
   rebase (rb) abort (a)       Abort an operation
+
+CI
+  ci merge-guard    Block merging a PR whose base is not trunk
 
 Navigation
   up (u)        Move up one branch
