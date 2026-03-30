@@ -20,7 +20,6 @@
 | gs cp | [gs commit pick](/cli/reference.md#gs-commit-pick) |
 | gs csp | [gs commit split](/cli/reference.md#gs-commit-split) |
 | gs dse | [gs downstack edit](/cli/reference.md#gs-downstack-edit) |
-| gs dsm | [gs downstack merge](/cli/reference.md#gs-downstack-merge) |
 | gs dsr | [gs downstack restack](/cli/reference.md#gs-downstack-restack) |
 | gs dss | [gs downstack submit](/cli/reference.md#gs-downstack-submit) |
 | gs dstr | [gs downstack track](/cli/reference.md#gs-downstack-track) |
@@ -39,3 +38,5 @@
 | gs uso | [gs upstack onto](/cli/reference.md#gs-upstack-onto) |
 | gs usr | [gs upstack restack](/cli/reference.md#gs-upstack-restack) |
 | gs uss | [gs upstack submit](/cli/reference.md#gs-upstack-submit) |
+| gs wtc | [gs worktree create](/cli/reference.md#gs-worktree-create) |
+| gs wtls | [gs worktree list](/cli/reference.md#gs-worktree-list) |
