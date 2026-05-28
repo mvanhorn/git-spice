@@ -721,6 +721,14 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 				Prompter:           integration.NewViewPrompter(view),
 				DefaultAutoResolve: cfg.IntegrationAutoResolve(),
 				RepoRoot:           repoRoot,
+				Regenerator: &integration.FileRegenerator{
+					Log: log,
+					Runner: &scriptrun.Runner{
+						Log:  log,
+						Args: os.Args,
+					},
+					RepoRoot: repoRoot,
+				},
 			}, nil
 		}),
 	)

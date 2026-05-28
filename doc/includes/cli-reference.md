@@ -1329,6 +1329,36 @@ branch. Once a manual submit succeeds, 'gs stack submit' and
 'gs upstack submit' will keep the published branch in sync with
 local rebuilds.
 
+### git-spice integration mark-pushed {#gs-integration-mark-pushed}
+
+```
+gs integration (int) mark-pushed [<hash>]
+```
+
+Record a hash as the integration branch's last-pushed value
+
+Records the given commit hash as the integration branch's
+last-pushed value in gs's local state. Does not push.
+
+Used to reconcile state after a manual git push of the
+integration branch, or after a "push rejected" error caused by
+a multi-checkout collision or a state reset.
+
+With no argument, the hash is discovered from the configured
+push remote. With an explicit hash, that hash is recorded
+verbatim.
+
+After 'gs integration mark-pushed', the next
+'gs integration submit' uses --force-with-lease against the
+recorded hash. If multiple checkouts are publishing this
+branch, this command will not save you from a collision; it
+just confirms which remote state you accept as your baseline
+before overwriting.
+
+**Arguments**
+
+* `hash`: Commit hash to record as last-pushed. If empty, fetches the configured push remote and uses its current tip.
+
 ### git-spice integration tip add {#gs-integration-tip-add}
 
 ```
