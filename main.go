@@ -28,15 +28,16 @@ import (
 	"go.abhg.dev/gs/internal/handler/checkout"
 	"go.abhg.dev/gs/internal/handler/cherrypick"
 	"go.abhg.dev/gs/internal/handler/delete"
+	"go.abhg.dev/gs/internal/handler/integration"
 	"go.abhg.dev/gs/internal/handler/merge"
 	"go.abhg.dev/gs/internal/handler/onto"
 	"go.abhg.dev/gs/internal/handler/restack"
 	"go.abhg.dev/gs/internal/handler/split"
 	"go.abhg.dev/gs/internal/handler/squash"
 	"go.abhg.dev/gs/internal/handler/submit"
-	"go.abhg.dev/gs/internal/handler/submodule"
 	"go.abhg.dev/gs/internal/handler/sync"
 	"go.abhg.dev/gs/internal/handler/track"
+	"go.abhg.dev/gs/internal/scriptrun"
 	"go.abhg.dev/gs/internal/secret"
 	"go.abhg.dev/gs/internal/sigstack"
 	"go.abhg.dev/gs/internal/silog"
@@ -197,6 +198,7 @@ func main() {
 		}),
 		komplete.WithPredictor("branches", komplete.PredictFunc(predictBranches)),
 		komplete.WithPredictor("trackedBranches", komplete.PredictFunc(predictTrackedBranches)),
+		komplete.WithPredictor("integrationTips", komplete.PredictFunc(predictIntegrationTips)),
 		komplete.WithPredictor("remotes", komplete.PredictFunc(predictRemotes)),
 		komplete.WithPredictor("dirs", komplete.PredictFunc(predictDirs)),
 		komplete.WithPredictor("forges", komplete.PredictFunc(predictForges(&forges))),
@@ -307,10 +309,9 @@ type mainCmd struct {
 	Branch branchCmd `cmd:"" aliases:"b" group:"Branch"`
 	Commit commitCmd `cmd:"" aliases:"c" group:"Commit"`
 
-	Worktree worktreeCmd `cmd:"" aliases:"wt" group:"Worktree"`
-	Rebase   rebaseCmd   `cmd:"" aliases:"rb" group:"Rebase"`
+	Integration integrationCmd `cmd:"" aliases:"int" group:"Integration"`
 
-	CI ciCmd `cmd:"" group:"CI" help:"CI/CD integration commands"`
+	Rebase rebaseCmd `cmd:"" aliases:"rb" group:"Rebase"`
 
 	// Navigation
 	Up     upCmd     `cmd:"" aliases:"u" group:"Navigation" help:"Move up one branch"`
@@ -447,7 +448,6 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 			wt *git.Worktree,
 			svc *spice.Service,
 			trackHandler TrackHandler,
-			submoduleApplier SubmoduleApplier,
 		) (CheckoutHandler, error) {
 			return &checkout.Handler{
 				Stdout:     kctx.Stdout,
@@ -457,7 +457,6 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 				Worktree:   wt,
 				Track:      trackHandler,
 				Service:    svc,
-				Submodule:  submoduleApplier,
 			}, nil
 		}),
 		kctx.BindSingletonProvider(func(
@@ -467,7 +466,6 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 			svc *spice.Service,
 			secretStash secret.Stash,
 			remoteResolver *remoteResolver,
-			cfg *spice.Config,
 		) (SubmitHandler, error) {
 			return &submit.Handler{
 				Log:        log,
@@ -477,9 +475,6 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 				Store:      store,
 				Service:    svc,
 				Browser:    _browserLauncher,
-				Config:     cfg,
-				RepoRoot:   wt.RootDir(),
-				Args:       os.Args,
 				FindRemote: func(ctx context.Context) (state.Remote, error) {
 					return ensureRemote(ctx, wt.Repository(), store, log, view)
 				},
@@ -519,40 +514,6 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 		}),
 		kctx.BindSingletonProvider(func(
 			log *silog.Logger,
-			wt *git.Worktree,
-			store *state.Store,
-			cfg *spice.Config,
-		) (SubmoduleTracker, error) {
-			var exclude []string
-			if cfg != nil {
-				exclude = cfg.SubmoduleExclusions()
-			}
-			return &submodule.Tracker{
-				Log:      log,
-				Worktree: wt,
-				Store:    store,
-				Exclude:  exclude,
-			}, nil
-		}),
-		kctx.BindSingletonProvider(func(
-			log *silog.Logger,
-			wt *git.Worktree,
-			store *state.Store,
-			cfg *spice.Config,
-		) (SubmoduleApplier, error) {
-			var exclude []string
-			if cfg != nil {
-				exclude = cfg.SubmoduleExclusions()
-			}
-			return &submodule.Applier{
-				Log:      log,
-				Worktree: wt,
-				Store:    store,
-				Exclude:  exclude,
-			}, nil
-		}),
-		kctx.BindSingletonProvider(func(
-			log *silog.Logger,
 			store *state.Store,
 			wt *git.Worktree,
 			svc *spice.Service,
@@ -570,7 +531,6 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 		}),
 		kctx.BindSingletonProvider(func(
 			log *silog.Logger,
-			cfg *spice.Config,
 			repo *git.Repository,
 			wt *git.Worktree,
 			store *state.Store,
@@ -579,14 +539,11 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 		) (SquashHandler, error) {
 			return &squash.Handler{
 				Log:        log,
-				Config:     cfg,
 				Repository: repo,
 				Worktree:   wt,
 				Store:      store,
 				Service:    svc,
 				Restack:    restackHandler,
-				RepoRoot:   wt.RootDir(),
-				Args:       os.Args,
 			}, nil
 		}),
 		kctx.BindSingletonProvider(func(
@@ -634,6 +591,7 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 			deleteHandler DeleteHandler,
 			restackHandler RestackHandler,
 			autostashHandler AutostashHandler,
+			integrationHandler IntegrationHandler,
 		) (SyncHandler, error) {
 			remote, err := ensureRemote(ctx, repo, store, log, view)
 			// TODO: move ensure remote to Service
@@ -668,6 +626,7 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 				Delete:           deleteHandler,
 				Restack:          restackHandler,
 				Autostash:        autostashHandler,
+				OnBranchRemoved:  integrationHandler.OnBranchRemoved,
 				Remote:           remote.Upstream,
 				RemoteRepository: remoteRepo,
 				PushRepository:   pushRepository,
@@ -729,6 +688,40 @@ func (cmd *mainCmd) AfterApply(ctx context.Context, kctx *kong.Context, logger *
 			view ui.View,
 		) (state.Remote, error) {
 			return ensureRemote(ctx, repo, store, log, view)
+		}),
+		kctx.BindSingletonProvider(func(
+			log *silog.Logger,
+			view ui.View,
+			repo *git.Repository,
+			wt *git.Worktree,
+			store *state.Store,
+			svc *spice.Service,
+			cfg *spice.Config,
+		) (IntegrationHandler, error) {
+			repoRoot := wt.RootDir()
+			var resolver integration.Resolver
+			if script := cfg.IntegrationResolver(); script != "" {
+				resolver = &integration.ScriptResolver{
+					Log:    log,
+					Script: script,
+					Runner: &scriptrun.Runner{
+						Log:  log,
+						Args: os.Args,
+					},
+					RepoRoot: repoRoot,
+				}
+			}
+			return &integration.Handler{
+				Log:                log,
+				Repository:         repo,
+				Worktree:           wt,
+				Store:              store,
+				Service:            svc,
+				Resolver:           resolver,
+				Prompter:           integration.NewViewPrompter(view),
+				DefaultAutoResolve: cfg.IntegrationAutoResolve(),
+				RepoRoot:           repoRoot,
+			}, nil
 		}),
 	)
 }

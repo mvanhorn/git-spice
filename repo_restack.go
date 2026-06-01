@@ -30,6 +30,7 @@ func (cmd *repoRestackCmd) Run(
 	store *state.Store,
 	handler RestackHandler,
 	autostashHandler AutostashHandler,
+	integrationHandler IntegrationHandler,
 ) (retErr error) {
 	currentBranch, err := wt.CurrentBranch(ctx)
 	if err != nil {
@@ -71,5 +72,5 @@ func (cmd *repoRestackCmd) Run(
 	}
 
 	log.Infof("Restacked %d branches", count)
-	return nil
+	return integrationHandler.MaybeRebuild(ctx)
 }
