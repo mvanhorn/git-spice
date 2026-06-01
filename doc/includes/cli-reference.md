@@ -165,7 +165,7 @@ was not initialized with a remote.
 ### git-spice repo restack {#gs-repo-restack}
 
 ```
-gs repo (r) restack (r) [flags]
+gs repo (r) restack (r)
 ```
 
 <span class="mdx-badge"><span class="mdx-badge__icon">:material-tag:{ title="Released in version" }</span><span class="mdx-badge__text">[v0.16.0](/changelog.md#v0.16.0)</span></span>
@@ -174,10 +174,6 @@ Restack all tracked branches
 
 All tracked branches in the repository are rebased on top of their
 respective bases in dependency order, ensuring a linear history.
-
-**Flags**
-
-* `-w`, `--worktree`: Only restack branches in the current worktree.
 
 ## Log
 
@@ -199,7 +195,6 @@ See https://abhinav.github.io/git-spice/cli/json/ for details.
 **Flags**
 
 * `-a`, `--all` ([:material-wrench:{ .middle title="spice.log.all" }](/cli/config.md#spicelogall)): Show all tracked branches, not just the current stack.
-* `-w`, `--worktree`: Filter to branches in the current worktree. Implies --all.
 * `-S`, `--[no-]cr-status` ([:material-wrench:{ .middle title="spice.log.crStatus" }](/cli/config.md#spicelogcrstatus)): Request and include information about the Change Request
 * `-c`, `--[no-]cr-comments` ([:material-wrench:{ .middle title="spice.log.crComments" }](/cli/config.md#spicelogcrcomments)): Include comment resolution counts for changes
 * `--json`: Write to stdout as a stream of JSON objects in an unspecified order <span class="mdx-badge"><span class="mdx-badge__icon">:material-tag:{ title="Released in version" }</span><span class="mdx-badge__text">[v0.18.0](/changelog.md#v0.18.0)</span>
@@ -224,7 +219,6 @@ See https://abhinav.github.io/git-spice/cli/json/ for details.
 **Flags**
 
 * `-a`, `--all` ([:material-wrench:{ .middle title="spice.log.all" }](/cli/config.md#spicelogall)): Show all tracked branches, not just the current stack.
-* `-w`, `--worktree`: Filter to branches in the current worktree. Implies --all.
 * `-S`, `--[no-]cr-status` ([:material-wrench:{ .middle title="spice.log.crStatus" }](/cli/config.md#spicelogcrstatus)): Request and include information about the Change Request
 * `-c`, `--[no-]cr-comments` ([:material-wrench:{ .middle title="spice.log.crComments" }](/cli/config.md#spicelogcrcomments)): Include comment resolution counts for changes
 * `--json`: Write to stdout as a stream of JSON objects in an unspecified order <span class="mdx-badge"><span class="mdx-badge__icon">:material-tag:{ title="Released in version" }</span><span class="mdx-badge__text">[v0.18.0](/changelog.md#v0.18.0)</span>
@@ -753,6 +747,7 @@ target (A) to the specified branch:
 * `--below`: Place the branch below the target branch and restack its upstack
 * `-t`, `--target=BRANCH`: Branch to create the new branch above/below
 * `-a`, `--all`: Automatically stage modified and deleted files
+* `-c`, `--fill`: Fill the commit message using the configured message generator.
 * `-m`, `--message=MSG`: Commit message
 * `-F`, `--message-file=FILE`: Read the commit message from the given file.
 * `--no-verify`: Bypass pre-commit and commit-msg hooks.
@@ -879,6 +874,7 @@ to specify a commit message without editing.
 
 **Flags**
 
+* `-c`, `--fill`: Fill the commit message using the configured message generator.
 * `--no-verify`: Bypass pre-commit and commit-msg hooks.
 * `--no-edit`: Do not open an editor to edit the squashed commit message. Only applicable if --message is not used. <span class="mdx-badge"><span class="mdx-badge__icon">:material-tag:{ title="Released in version" }</span><span class="mdx-badge__text">[v0.16.0](/changelog.md#v0.16.0)</span>
 * `-m`, `--message=MSG`: Use the given message as the commit message.
@@ -1094,6 +1090,7 @@ when you want to apply changes to an older commit.
 
 * `-a`, `--all`: Stage all changes before committing.
 * `--allow-empty`: Create a new commit even if it contains no changes.
+* `-c`, `--fill`: Fill the commit message using the configured message generator.
 * `--fixup=COMMIT`: Create a fixup commit. See also 'git-spice commit fixup'.
 * `-m`, `--message=MSG`: Use the given message as the commit message.
 * `-F`, `--message-file=FILE`: Read the commit message from the given file.
@@ -1134,6 +1131,7 @@ The --no-prompt flag can be used to skip this prompt in scripts.
 
 * `-a`, `--all`: Stage all changes before committing.
 * `--allow-empty`: Create a commit even if it contains no changes.
+* `-c`, `--fill`: Fill the commit message using the configured message updater.
 * `-m`, `--message=MSG`: Use the given message as the commit message.
 * `-F`, `--message-file=FILE`: Read the commit message from the given file.
 * `--no-edit`: Don't edit the commit message
@@ -1224,43 +1222,6 @@ This command requires at least Git 2.45.
 **Flags**
 
 * `--from=NAME`: Branch whose upstack commits will be considered.
-
-## Worktree
-
-### git-spice worktree list {#gs-worktree-list}
-
-```
-gs worktree (wt) list (ls)
-```
-
-List worktrees and their branches
-
-Lists all worktrees associated with the repository.
-For each worktree, shows the checked-out branch
-and any tracked branches in its stack.
-
-### git-spice worktree create {#gs-worktree-create}
-
-```
-gs worktree (wt) create (c) <path> [flags]
-```
-
-Create a new worktree
-
-Creates a new Git worktree at the given path.
-The worktree starts in detached HEAD state
-at the current trunk commit.
-
-Use -b/--branch to create a new tracked branch
-in the worktree.
-
-**Arguments**
-
-* `path`: Path for the new worktree
-
-**Flags**
-
-* `-b`, `--branch=BRANCH`: Create and check out a new branch in the worktree
 
 ## Rebase
 
