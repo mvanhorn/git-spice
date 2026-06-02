@@ -143,8 +143,7 @@ func (a *Applier) rollback(
 	switched []switchedSub,
 ) {
 	// Restore in reverse order of switching.
-	for i := len(switched) - 1; i >= 0; i-- {
-		s := switched[i]
+	for _, s := range slices.Backward(switched) {
 		subWt, err := a.Worktree.SubmoduleWorktree(ctx, s.path)
 		if err != nil {
 			a.Log.Warn("Submodule rollback failed: open worktree",
