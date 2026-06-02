@@ -50,9 +50,15 @@ func TestSubmodules(t *testing.T) {
 	t.Run("SubmoduleWorktree", func(t *testing.T) {
 		subWt, err := parentWt.SubmoduleWorktree(ctx, "libs/core")
 		require.NoError(t, err)
+		// Normalize separators: RootDir comes from
+		// 'git rev-parse --show-toplevel' which uses forward
+		// slashes on all platforms, while filepath.Join uses
+		// the platform separator.
 		assert.Equal(t,
-			filepath.Join(parentWt.RootDir(), "libs", "core"),
-			subWt.RootDir(),
+			filepath.ToSlash(
+				filepath.Join(parentWt.RootDir(), "libs", "core"),
+			),
+			filepath.ToSlash(subWt.RootDir()),
 		)
 	})
 }
